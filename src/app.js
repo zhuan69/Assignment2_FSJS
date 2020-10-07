@@ -2,7 +2,7 @@
 const express = require('express');
 const authRoute = require('./routes/auth-routes');
 const mongoose = require('mongoose');
-const playerRoute = require('./routes/player-route');
+const playerRoute = require('./routes/player-routes');
 const { errorHandler } = require('./error/error-handler');
 //Modules variables
 require('dotenv').config();
