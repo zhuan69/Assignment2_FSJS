@@ -1,0 +1,38 @@
+{
+  "name": "assignment2_fsjs",
+  "version": "1.0.0",
+  "description": "Clash of Village",
+  "main": "app.js",
+  "jest": {
+    "setupFrameworkScriptFile": "./__test__/setup.js"
+  },
+  "scripts": {
+    "start": "nodemon ./src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhuan69/Assignment2_FSJS.git"
+  },
+  "author": "Zhuan Akbar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zhuan69/Assignment2_FSJS/issues"
+  },
+  "homepage": "https://github.com/zhuan69/Assignment2_FSJS#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-validator": "^6.6.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^3.6.2",
+    "mongoose": "^5.10.5",
+    "mongoose-autopopulate": "^0.12.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.9.0",
+    "jest": "^26.4.2",
+    "nodemon": "^2.0.4"
+  }
+}
