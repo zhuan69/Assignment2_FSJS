@@ -11,7 +11,7 @@ const {
   consumption,
   createBuild,
   updateBuild,
-} = require('../helpers/filter-invade');
+} = require('../helpers/filter-crud');
 
 exports.indexResources = async (req, res, next) => {
   const { username } = req.params;
@@ -272,160 +272,129 @@ exports.createBuilding = async (req, res, next) => {
     }
   }
 };
-exports.collectResource = async (req, res) => {
+exports.collectResource = async (req, res, next) => {
   const { username } = req.params;
   const { collectType } = req.query;
   const unixTime = Date.now();
 
   const dataUser = await Player.findOne({ username: username });
+  if (dataUser.buildings === undefined) {
+    next(AnError.notFound('Anda tidak memiliki bangunan apapun'));
+    return;
+  }
   const { createTown, energyCollect } = dataUser.townHall;
   const { stamina, food, coin } = dataUser.resources;
-  if (dataUser.buildings !== undefined) {
-    const {
-      createFarm,
-      createMarket,
-      farmCollect,
-      marketCollect,
-    } = dataUser.buildings;
-    if (collectType === 'Farm') {
-      if (farmCollect === undefined) {
-        const unixFarm = Date.parse(createFarm);
-        const valueFood = getValueCollect(unixTime, unixFarm);
-        if (valueFood >= 20) {
-          const resultFood = await collect(
-            Resource,
-            dataUser.resources._id,
-            food,
-            20,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res.status(201).json({ message: 'Food Collected', data: resultFood });
-        } else {
-          const resultFood = await collect(
-            Resource,
-            dataUser.resources._id,
-            food,
-            valueFood,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res.status(201).json({ message: 'Food Collected', data: resultFood });
-        }
+  const {
+    createFarm,
+    createMarket,
+    farmCollect,
+    marketCollect,
+  } = dataUser.buildings;
+  if (collectType === 'Farm') {
+    if (farmCollect === undefined) {
+      const unixFarm = Date.parse(createFarm);
+      const valueFood = getValueCollect(unixTime, unixFarm);
+      if (valueFood >= 20) {
+        const resultFood = await collect(
+          Resource,
+          dataUser.resources._id,
+          food,
+          20,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res.status(201).json({ message: 'Food Collected', data: resultFood });
       } else {
-        const unixFoodCollect = Date.parse(farmCollect);
-        const valueFoodCollect = getValueCollect(unixTime, unixFoodCollect);
-        if (valueFoodCollect > 20) {
-          const resultFood = await collect(
-            Resource,
-            dataUser.resources._id,
-            food,
-            20,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res.status(201).json({ message: 'Food Collected', data: resultFood });
-        } else {
-          const resultFood = await collect(
-            Resource,
-            dataUser.resources._id,
-            food,
-            valueFoodCollect,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res.status(201).json({ message: 'Food Collected', data: resultFood });
-        }
+        const resultFood = await collect(
+          Resource,
+          dataUser.resources._id,
+          food,
+          valueFood,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res.status(201).json({ message: 'Food Collected', data: resultFood });
       }
-    } else if (collectType === 'Market') {
-      if (marketCollect === undefined) {
-        const unixMarket = Date.parse(createMarket);
-        const valueCoin = getValueCollect(unixTime, unixMarket);
-        if (valueCoin >= 20) {
-          const resultCoin = await collect(
-            Resource,
-            dataUser.resources._id,
-            coin,
-            20,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res.status(201).json({ message: 'Coin Collected', data: resultCoin });
-        } else {
-          const resultCoin = await collect(
-            Resource,
-            dataUser.resources._id,
-            coin,
-            valueCoin,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res.status(201).json({ message: 'Coin collected', data: resultCoin });
-        }
+    } else {
+      const unixFoodCollect = Date.parse(farmCollect);
+      const valueFoodCollect = getValueCollect(unixTime, unixFoodCollect);
+      if (valueFoodCollect > 20) {
+        const resultFood = await collect(
+          Resource,
+          dataUser.resources._id,
+          food,
+          20,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res.status(201).json({ message: 'Food Collected', data: resultFood });
       } else {
-        const unixCollectMarket = Date.parse(marketCollect);
-        const valueCoinCollect = getValueCollect(unixTime, unixCollectMarket);
-        if (valueCoinCollect >= 20) {
-          const resultCollectCoin = await collect(
-            Resource,
-            dataUser.resources._id,
-            coin,
-            20,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res
-            .status(201)
-            .json({ message: 'Coin collected', data: resultCollectCoin });
-        } else {
-          const resultCollectCoin = await collect(
-            Resource,
-            dataUser.resources._id,
-            coin,
-            valueCoinCollect,
-            collectType,
-          );
-          await updateDateCollect(
-            Building,
-            dataUser.buildings._id,
-            collectType,
-          );
-          res
-            .status(201)
-            .json({ message: 'Coin collected', data: resultCollectCoin });
-        }
+        const resultFood = await collect(
+          Resource,
+          dataUser.resources._id,
+          food,
+          valueFoodCollect,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res.status(201).json({ message: 'Food Collected', data: resultFood });
       }
     }
-  }
-  if (collectType === 'Town Hall') {
+  } else if (collectType === 'Market') {
+    if (marketCollect === undefined) {
+      const unixMarket = Date.parse(createMarket);
+      const valueCoin = getValueCollect(unixTime, unixMarket);
+      if (valueCoin >= 20) {
+        const resultCoin = await collect(
+          Resource,
+          dataUser.resources._id,
+          coin,
+          20,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res.status(201).json({ message: 'Coin Collected', data: resultCoin });
+      } else {
+        const resultCoin = await collect(
+          Resource,
+          dataUser.resources._id,
+          coin,
+          valueCoin,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res.status(201).json({ message: 'Coin collected', data: resultCoin });
+      }
+    } else {
+      const unixCollectMarket = Date.parse(marketCollect);
+      const valueCoinCollect = getValueCollect(unixTime, unixCollectMarket);
+      if (valueCoinCollect >= 20) {
+        const resultCollectCoin = await collect(
+          Resource,
+          dataUser.resources._id,
+          coin,
+          20,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res
+          .status(201)
+          .json({ message: 'Coin collected', data: resultCollectCoin });
+      } else {
+        const resultCollectCoin = await collect(
+          Resource,
+          dataUser.resources._id,
+          coin,
+          valueCoinCollect,
+          collectType,
+        );
+        await updateDateCollect(Building, dataUser.buildings._id, collectType);
+        res
+          .status(201)
+          .json({ message: 'Coin collected', data: resultCollectCoin });
+      }
+    }
+  } else if (collectType === 'Town Hall') {
     if (energyCollect === undefined) {
       const unixTown = Date.parse(createTown);
       const valueEnergy = getValueCollect(unixTime, unixTown);
@@ -453,7 +422,7 @@ exports.collectResource = async (req, res) => {
           .json({ message: 'Stamina Collected', data: resultStamina });
       }
     } else {
-      const unixEnergyCollect = energyCollect.parse();
+      const unixEnergyCollect = Date.parse(energyCollect);
       const valueCollectEnergy = getValueCollect(unixTime, unixEnergyCollect);
       if (valueCollectEnergy >= 50) {
         const resultCollectStamina = await collect(
@@ -488,7 +457,57 @@ exports.createInfantry = async (req, res, next) => {
   const { username } = req.params;
 
   const dataUser = await Player.findOne({ username: username });
+  if (dataUser.buildings === undefined) {
+    next(AnError.notFound('Anda tidak memiliki bagunan apapun'));
+    return;
+  }
   const { food, coin } = dataUser.resources;
+  const { buildingType } = dataUser.buildings;
+  const { totalInfantry, totalPower } = dataUser.infantries;
+  let isBarrack;
+  buildingType.forEach((el) => {
+    if (el === 'Barrack') {
+      return (isBarrack = true);
+    } else {
+      return (isBarrack = false);
+    }
+  });
+  if (isBarrack === false) {
+    next(AnError.notFound('Anda belum memiliki barrack'));
+    return;
+  } else {
+    if (food < 5 && coin < 5) {
+      next(
+        AnError.badRequest(
+          'Coin dan food anda tidak cukup untuk membuat infantry',
+        ),
+      );
+      return;
+    }
+    const attackPoint = Math.floor(Math.random() * (45 - 30 + 1) + 30);
+    const powerPoint = attackPoint;
+
+    const resourceInfantry = await Resource.findByIdAndUpdate(
+      dataUser.resources._id,
+      { $set: { food: food - 5, coin: coin - 5 } },
+      { new: true },
+    );
+    const resultInfantry = await Infantry.findByIdAndUpdate(
+      dataUser.infantries._id,
+      {
+        $push: { soldierAttackPoint: attackPoint },
+        $set: {
+          totalInfantry: totalInfantry + 1,
+          totalPower: totalPower + powerPoint,
+        },
+      },
+      { new: true },
+    );
+    res.status(201).json({
+      message: 'Berhasil membuat infantry',
+      data: { infantry: resultInfantry, resource: resourceInfantry },
+    });
+  }
 };
 
 exports.invadePlayer = async (req, res, next) => {
