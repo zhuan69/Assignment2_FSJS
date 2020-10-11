@@ -43,7 +43,10 @@ exports.collect = async function (schema, filter, resource, value, input) {
 };
 
 exports.updateDateCollect = async function (schema, filter, input) {
-  const updateDate = new Date();
+  const updateDate = new Date().toLocaleString('en-US', {
+    hour12: false,
+    timeZone: 'Asia/Bangkok',
+  });
   if (input === 'Farm') {
     return schema.findByIdAndUpdate(
       { _id: filter },
@@ -78,7 +81,10 @@ exports.consumption = async function (schema, filter, resource, consumpt) {
 };
 
 exports.createBuild = async function (schema, type) {
-  const createDate = new Date();
+  const createDate = new Date().toLocaleString('en-US', {
+    hour12: false,
+    timeZone: 'Asia/Bangkok',
+  });
   if (type === 'Farm') {
     return new schema({ buildingType: type, createFarm: createDate });
   } else if (type === 'Market') {
@@ -89,7 +95,10 @@ exports.createBuild = async function (schema, type) {
 };
 
 exports.updateBuild = async function (schema, filter, type) {
-  const createDate = new Date();
+  const createDate = new Date().toLocaleString('en-US', {
+    hour12: false,
+    timeZone: 'Asia/Bangkok',
+  });
   if (type === 'Farm') {
     return schema.findByIdAndUpdate(
       { _id: filter },

@@ -29,3 +29,29 @@
 // const power = Math.floor(Math.random() * (45 - 30 + 1) + 30) * 10;
 
 // console.log(power);
+
+// const date = new Date().toLocaleString('en-US', {
+//   hour12: false,
+//   timeZone: 'Asia/Bangkok',
+// });
+
+// console.log(date);
+
+// let cooldown = false;
+// setTimeout(() => {
+//   cooldown = true;
+// }, 2000);
+
+// const bcrypt = require('bcryptjs');
+
+// async function change() {
+//   const password = 'admin';
+//   const salt = await bcrypt.genSalt(12);
+//   const hash = await bcrypt.hash(password, salt);
+
+//   return hash;
+// }
+
+// change().then((pass) => {
+//   console.log(pass);
+// });

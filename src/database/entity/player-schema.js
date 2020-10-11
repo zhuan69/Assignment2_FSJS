@@ -28,7 +28,13 @@ const playerSchema = new Schema(
         type: String,
         default: 'Default Town',
       },
-      createTown: { type: Date, default: Date.now },
+      createTown: {
+        type: Date,
+        default: new Date().toLocaleString('en-Us', {
+          hour12: false,
+          timeZone: 'Asia/Bangkok',
+        }),
+      },
       energyCollect: Date,
     },
     resources: {

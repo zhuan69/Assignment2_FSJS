@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 const Player = require('../database/entity/player-schema');
 const Resource = require('../database/entity/resource-schema');
 const AnError = require('../error/AnError');
@@ -13,6 +14,11 @@ exports.indexUser = async (req, res) => {
 };
 
 exports.singup = async (req, res, next) => {
+  const errValidation = validationResult(req);
+  if (!errValidation.isEmpty()) {
+    next(AnError.badRequest(errValidation.array()));
+    return;
+  }
   const { username, password, email } = req.body;
   const userDoc = await Player.findOne({ username: username });
   if (userDoc) {

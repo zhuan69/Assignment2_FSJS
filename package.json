@@ -3,12 +3,9 @@
   "version": "1.0.0",
   "description": "Clash of Village",
   "main": "app.js",
-  "jest": {
-    "setupFrameworkScriptFile": "./__test__/setup.js"
-  },
   "scripts": {
     "start": "nodemon ./src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -32,7 +29,6 @@
   },
   "devDependencies": {
     "eslint": "^7.9.0",
-    "jest": "^26.4.2",
     "nodemon": "^2.0.4"
   }
 }

@@ -15,21 +15,15 @@ const {
 
 exports.indexResources = async (req, res, next) => {
   const { username } = req.params;
-
-  try {
-    const result = await Player.findOne({ username: username });
-    if (!result) {
-      next(AnError.notFound('Data tidak ada'));
-      return;
-    }
-    res.status(200).json({
-      message: 'Data yang di dapat',
-      info: { TownName: result.townHallName, Resource: result.resources },
-    });
-  } catch {
-    next(AnError.internalError());
+  const result = await Player.findOne({ username: username });
+  if (!result) {
+    next(AnError.notFound('Data tidak ada'));
     return;
   }
+  res.status(200).json({
+    message: 'Data yang di dapat',
+    info: { TownName: result.townHallName, Resource: result.resources },
+  });
 };
 
 exports.indexBuilding = async (req, res, next) => {
@@ -53,40 +47,34 @@ exports.indexBuilding = async (req, res, next) => {
 exports.editInformation = async (req, res, next) => {
   const username = req.params.username;
   const { nickname, townHallName } = req.body;
-  try {
-    const userDoc = await Player.findOne({ username: username });
-    if (userDoc) {
-      if (nickname === userDoc.nickname) {
-        next(AnError.badRequest('Nickname sudah digunakan'));
-        return;
-      } else if (townHallName === userDoc.townHallName) {
-        next(AnError).badRequest('Nama Town Hall sudah di gunakan');
-        return;
-      }
+  const userDoc = await Player.findOne({ username: username });
+  if (userDoc) {
+    if (nickname === userDoc.nickname) {
+      next(AnError.badRequest('Nickname sudah digunakan'));
+      return;
+    } else if (townHallName === userDoc.townHallName) {
+      next(AnError).badRequest('Nama Town Hall sudah di gunakan');
+      return;
     }
-    const result = await Player.findOneAndUpdate(
-      { username: username },
-      {
-        $set: {
-          nickname: nickname,
-          townHallName: townHallName,
-        },
-      },
-      { new: true },
-    );
-
-    res.status(201).json({
-      message: 'Berhasil ganti nicknaname dan town hall name',
-      data: {
-        username: result.username,
-        nickname: result.nickname,
-        townName: result.townHallName,
-      },
-    });
-  } catch {
-    next(AnError.internalError());
-    return;
   }
+  const result = await Player.findOneAndUpdate(
+    { username: username },
+    {
+      $set: {
+        nickname: nickname,
+        'townHall.townName': townHallName,
+      },
+    },
+    { new: true },
+  );
+  res.status(201).json({
+    message: 'Berhasil ganti nicknaname dan town hall name',
+    data: {
+      username: result.username,
+      nickname: result.nickname,
+      townName: result.townHall.townName,
+    },
+  });
 };
 
 exports.createBuilding = async (req, res, next) => {
@@ -110,38 +98,58 @@ exports.createBuilding = async (req, res, next) => {
           next(AnError.badRequest('Stamina kurang'));
           return;
         }
-        const infantry = new Infantry();
-        infantry.save();
-        const resourceBarrack = await consumption(
-          Resource,
-          dataUser.resources._id,
-          stamina,
-          10,
-        );
-        const barrack = await updateBuild(
-          Building,
-          userBuild.buildings._id,
-          buildType,
-        );
-        await Player.findOneAndUpdate(
-          { username: username },
-          { $set: { infantries: infantry._id } },
-          { new: true },
-        );
-        res.status(201).json({
-          message: 'Ok',
-          data: {
-            resource: resourceBarrack.stamina,
-            building: barrack,
-            infantry: infantry,
-          },
-        });
+        if (dataUser.infantries === undefined) {
+          const infantry = new Infantry();
+          infantry.save();
+          const resourceBarrack = await consumption(
+            Resource,
+            dataUser.resources._id,
+            stamina,
+            10,
+          );
+          const barrack = await updateBuild(
+            Building,
+            userBuild.buildings._id,
+            buildType,
+          );
+          await Player.findOneAndUpdate(
+            { username: username },
+            { $set: { infantries: infantry._id } },
+            { new: true },
+          );
+          res.status(201).json({
+            message: 'Ok',
+            data: {
+              resource: resourceBarrack.stamina,
+              building: barrack,
+              infantry: infantry,
+            },
+          });
+        } else {
+          const resourceBarrack = await consumption(
+            Resource,
+            dataUser.resources._id,
+            stamina,
+            10,
+          );
+          const barrack = await updateBuild(
+            Building,
+            userBuild.buildings._id,
+            buildType,
+          );
+          res.status(201).json({
+            message: 'Ok',
+            data: {
+              resource: resourceBarrack.stamina,
+              building: barrack,
+            },
+          });
+        }
       } else if (buildType === 'Farm') {
         if (stamina < 8) {
           next(AnError.badRequest('Stamina anda tidak cukup'));
           return;
         }
-        const createFarm = new Date();
         const resourceFarm = await consumption(
           Resource,
           dataUser.resources._id,
@@ -152,7 +160,6 @@ exports.createBuilding = async (req, res, next) => {
           Building,
           userBuild.buildings._id,
           buildType,
-          createFarm,
         );
         res.status(201).json({
           message: 'Ok',
@@ -166,7 +173,6 @@ exports.createBuilding = async (req, res, next) => {
           next(AnError.badRequest('Stamina tidak cukup'));
           return;
         }
-        const createMarket = new Date();
         const resourceMarket = await consumption(
           Resource,
           dataUser.resources._id,
@@ -177,7 +183,6 @@ exports.createBuilding = async (req, res, next) => {
           Building,
           userBuild.buildings._id,
           buildType,
-          createMarket,
         );
         res.status(201).json({
           message: 'OK',
@@ -303,7 +308,9 @@ exports.collectResource = async (req, res, next) => {
           collectType,
         );
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
-        res.status(201).json({ message: 'Food Collected', data: resultFood });
+        res
+          .status(201)
+          .json({ message: 'Food Collected', Food: resultFood.food });
       } else {
         const resultFood = await collect(
           Resource,
@@ -313,7 +320,9 @@ exports.collectResource = async (req, res, next) => {
           collectType,
         );
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
-        res.status(201).json({ message: 'Food Collected', data: resultFood });
+        res
+          .status(201)
+          .json({ message: 'Food Collected', Food: resultFood.food });
       }
     } else {
       const unixFoodCollect = Date.parse(farmCollect);
@@ -327,7 +336,9 @@ exports.collectResource = async (req, res, next) => {
           collectType,
         );
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
-        res.status(201).json({ message: 'Food Collected', data: resultFood });
+        res
+          .status(201)
+          .json({ message: 'Food Collected', Food: resultFood.food });
       } else {
         const resultFood = await collect(
           Resource,
@@ -337,7 +348,9 @@ exports.collectResource = async (req, res, next) => {
           collectType,
         );
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
-        res.status(201).json({ message: 'Food Collected', data: resultFood });
+        res
+          .status(201)
+          .json({ message: 'Food Collected', Food: resultFood.food });
       }
     }
   } else if (collectType === 'Market') {
@@ -353,7 +366,9 @@ exports.collectResource = async (req, res, next) => {
           collectType,
         );
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
-        res.status(201).json({ message: 'Coin Collected', data: resultCoin });
+        res
+          .status(201)
+          .json({ message: 'Coin Collected', Coin: resultCoin.coin });
       } else {
         const resultCoin = await collect(
           Resource,
@@ -363,7 +378,9 @@ exports.collectResource = async (req, res, next) => {
           collectType,
         );
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
-        res.status(201).json({ message: 'Coin collected', data: resultCoin });
+        res
+          .status(201)
+          .json({ message: 'Coin collected', Coin: resultCoin.coin });
       }
     } else {
       const unixCollectMarket = Date.parse(marketCollect);
@@ -379,7 +396,7 @@ exports.collectResource = async (req, res, next) => {
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
         res
           .status(201)
-          .json({ message: 'Coin collected', data: resultCollectCoin });
+          .json({ message: 'Coin collected', Coin: resultCollectCoin });
       } else {
         const resultCollectCoin = await collect(
           Resource,
@@ -391,7 +408,7 @@ exports.collectResource = async (req, res, next) => {
         await updateDateCollect(Building, dataUser.buildings._id, collectType);
         res
           .status(201)
-          .json({ message: 'Coin collected', data: resultCollectCoin });
+          .json({ message: 'Coin collected', Coin: resultCollectCoin.coin });
       }
     }
   } else if (collectType === 'Town Hall') {
@@ -406,9 +423,10 @@ exports.collectResource = async (req, res, next) => {
           50,
         );
         await updateDateCollect(Player, username);
-        res
-          .status(201)
-          .json({ message: 'Stamina Collected', data: resultStamina });
+        res.status(201).json({
+          message: 'Stamina Collected',
+          Stamina: resultStamina.stamina,
+        });
       } else {
         const resultStamina = await collect(
           Resource,
@@ -417,9 +435,10 @@ exports.collectResource = async (req, res, next) => {
           valueEnergy,
         );
         await updateDateCollect(Player, username);
-        res
-          .status(201)
-          .json({ message: 'Stamina Collected', data: resultStamina });
+        res.status(201).json({
+          message: 'Stamina Collected',
+          Stamina: resultStamina.stamina,
+        });
       }
     } else {
       const unixEnergyCollect = Date.parse(energyCollect);
@@ -434,7 +453,7 @@ exports.collectResource = async (req, res, next) => {
         await updateDateCollect(Player, username);
         res.status(201).json({
           message: 'Stamina Collected',
-          data: resultCollectStamina,
+          Stamina: resultCollectStamina.stamina,
         });
       } else {
         const resultCollectStamina = await collect(
@@ -446,7 +465,7 @@ exports.collectResource = async (req, res, next) => {
         await updateDateCollect(Player, username);
         res.status(201).json({
           message: 'Stamina Collected',
-          data: resultCollectStamina,
+          Stamina: resultCollectStamina.stamina,
         });
       }
     }
@@ -516,9 +535,16 @@ exports.invadePlayer = async (req, res, next) => {
 
   const invader = await player(Player, username);
   const defender = await player(Player, invadeuser);
-
-  if (invader.power > defender.power) {
-    try {
+  let cooldown = false;
+  if (cooldown === true) {
+    next(
+      AnError.badRequest('Anda sedang cooldown tidak bisa melakukan serangan'),
+    );
+  } else {
+    if (invader.power > defender.power) {
+      setTimeout(() => {
+        return (cooldown = true);
+      }, 60000);
       const resourcePlayer2 = await Resource.findOneAndUpdate(
         { _id: defender.resId },
         {
@@ -544,18 +570,13 @@ exports.invadePlayer = async (req, res, next) => {
         message: 'Invade success and you got reward',
         totalResources: resourcePlayer1,
       });
-    } catch (err) {
-      next(AnError.internalError());
-      return;
-    }
-  } else {
-    try {
+    } else {
       let arrayPoint = invader.soldierPoint;
       arrayPoint.splice(0, 3);
       let casualitiesSoldiers = Math.floor(invader.soldiers / 3);
       let casualitiesPower = arrayPoint.reduce((total, value) => {
         return total + value;
-      });
+      }, 0);
       if (casualitiesSoldiers >= 0) {
         casualitiesPower = 0;
       }
@@ -574,9 +595,25 @@ exports.invadePlayer = async (req, res, next) => {
         message: 'Invade failed and you get casualities',
         casualities: invaderSoldiers,
       });
-    } catch (err) {
-      next(AnError.internalError());
-      return;
     }
   }
+};
+
+exports.demolishBuilding = async (req, res, next) => {
+  const { username } = req.params;
+  const { destroy } = req.body;
+
+  const dataUser = await Player.findOne({ username: username });
+  const { buildingType } = dataUser.buildings;
+  const indexType = buildingType.indexOf(destroy);
+  if (destroy !== buildingType[indexType]) {
+    next(AnError.badRequest('Bangunan tidak ada'));
+    return;
+  }
+  const deleteBuilding = await Building.findByIdAndUpdate(
+    dataUser.buildings._id,
+    { $pull: { buildingType: destroy } },
+    { new: true },
+  );
+  res.status(200).json({ messge: 'ok', data: deleteBuilding });
 };

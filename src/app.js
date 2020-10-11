@@ -32,7 +32,9 @@ mongoose
     useFindAndModify: false,
   })
   .then(() => {
-    app.listen(process.env.PORT);
+    app.listen(process.env.PORT, () => {
+      console.log('listening on port 4000');
+    });
   })
   .catch((err) => {
     console.log(err);
